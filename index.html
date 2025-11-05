@@ -95,6 +95,14 @@
             transform: none;
         }
 
+        .btn-create {
+            background: #10b981;
+        }
+
+        .btn-create:hover:not(:disabled) {
+            background: #059669;
+        }
+
         .scanning-indicator {
             text-align: center;
             padding: 20px;
@@ -122,62 +130,77 @@
             }
         }
 
-        .nearby-users {
-            max-height: 400px;
-            overflow-y: auto;
+        .code-box {
+            background: #f3f4f6;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
         }
-
-        .user-card {
-            background: #f9fafb;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .user-card:hover {
-            border-color: #667eea;
-            transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 18px;
-        }
-
-        .user-details {
-            flex: 1;
-        }
-
-        .user-name {
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 2px;
-        }
-
-        .user-distance {
+        
+        .code-label {
             font-size: 12px;
-            color: #6b7280;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .code {
+            font-family: 'Courier New', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            letter-spacing: 4px;
+            user-select: all;
+            margin: 10px 0;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        
+        .code-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 24px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .code-input:focus {
+            border-color: #667eea;
         }
 
         .chat-container {
@@ -275,6 +298,14 @@
         .btn-back:hover {
             background: #4b5563;
         }
+
+        .btn-disconnect {
+            background: #ef4444;
+        }
+
+        .btn-disconnect:hover:not(:disabled) {
+            background: #dc2626;
+        }
         
         .alert {
             padding: 12px;
@@ -297,6 +328,11 @@
             background: #d1fae5;
             color: #065f46;
         }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
         
         .info-box {
             padding: 15px;
@@ -313,75 +349,79 @@
             display: none;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #9ca3af;
+        .peer-info {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 13px;
         }
 
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
+        .peer-info strong {
+            color: #667eea;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📡 Nearby Chat</h1>
-            <div class="status" id="status">Setup your profile</div>
+            <h1>📡 Simple WiFi Chat</h1>
+            <div class="status" id="status">Choose your role</div>
         </div>
         
         <div id="alertContainer"></div>
         
-        <!-- Username Setup Screen -->
-        <div id="setupScreen" class="section">
-            <div class="username-setup">
-                <div class="info-box">
-                    <strong>Welcome!</strong>
-                    <br>
-                    Choose a nickname to appear as when others see you nearby
-                </div>
-                <input type="text" class="username-input" id="usernameInput" placeholder="Enter your nickname" maxlength="20">
-                <button class="btn" id="startBtn">Start Broadcasting</button>
+        <!-- Initial Screen -->
+        <div id="initialScreen" class="section">
+            <div class="info-box">
+                <strong>💡 How it works:</strong>
+                <br><br>
+                One person creates a room and gets a code.<br>
+                The other person joins using that code.<br>
+                Then you can chat directly!
             </div>
+            <button class="btn btn-create" id="createBtn">Create Room (I'll Share Code)</button>
+            <button class="btn" id="showJoinBtn">Join Room (I Have a Code)</button>
         </div>
 
-        <!-- Scanning Screen -->
-        <div id="scanScreen" class="section hidden">
-            <div class="scanning-indicator">
-                <div class="pulse"></div>
-                <div><strong>Scanning for nearby users...</strong></div>
-                <div style="font-size: 13px; color: #6b7280; margin-top: 10px;">
-                    Broadcasting as: <strong id="myUsername"></strong>
-                </div>
+        <!-- Create Room Screen -->
+        <div id="createScreen" class="section hidden">
+            <div class="info-box">
+                <strong>✅ Room Created!</strong>
+            </div>
+            
+            <div class="code-box">
+                <div class="code-label">Share This Code</div>
+                <div class="code" id="roomCode">----</div>
+                <button class="copy-btn" id="copyBtn">📋 Copy Code</button>
             </div>
 
-            <div id="nearbyUsers" class="nearby-users">
-                <div class="empty-state">
-                    <div class="empty-state-icon">👥</div>
-                    <div>No nearby users found</div>
-                    <div style="font-size: 12px; margin-top: 10px;">
-                        Make sure others have this page open on the same WiFi network
-                    </div>
-                </div>
+            <div class="peer-info">
+                <strong>📱 Waiting for someone to join...</strong>
+                <br>
+                Share the code above with the other person
             </div>
 
-            <button class="btn btn-back" id="backBtn">Change Nickname</button>
+            <button class="btn btn-back" id="cancelCreateBtn">Cancel</button>
+        </div>
+
+        <!-- Join Room Screen -->
+        <div id="joinScreen" class="section hidden">
+            <div class="info-box">
+                <strong>Enter the 4-digit code</strong><br>
+                shared by the room creator
+            </div>
+            
+            <div class="input-group">
+                <input type="text" class="code-input" id="joinCodeInput" placeholder="XXXX" maxlength="4">
+            </div>
+
+            <button class="btn" id="joinBtn">Join Room</button>
+            <button class="btn btn-back" id="cancelJoinBtn">Back</button>
         </div>
 
         <!-- Chat Screen -->
         <div id="chatScreen" class="hidden">
-            <div class="section" style="padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div class="user-avatar" id="chatAvatar">U</div>
-                    <div style="flex: 1;">
-                        <div class="user-name" id="chatUsername">User</div>
-                        <div class="user-distance" id="chatStatus">Connected</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="chat-container">
                 <div class="messages" id="messages">
                     <div class="info-box">🎉 Connected! Start chatting...</div>
@@ -393,43 +433,20 @@
             </div>
 
             <div class="section">
-                <button class="btn btn-back" id="disconnectBtn">Disconnect</button>
+                <button class="btn btn-disconnect" id="disconnectBtn">Disconnect</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Simple peer discovery using localStorage broadcast channel
-        const BROADCAST_KEY = 'nearby_chat_users';
-        const MY_ID = 'user_' + Math.random().toString(36).substr(2, 9);
+        // Use window.storage for persistent signaling
+        const STORAGE_PREFIX = 'wifi_chat_';
         
-        let myUsername = '';
-        let nearbyUsers = new Map();
-        let currentPeer = null;
-        let dataChannel = null;
         let peerConnection = null;
-
-        // UI Elements
-        const setupScreen = document.getElementById('setupScreen');
-        const scanScreen = document.getElementById('scanScreen');
-        const chatScreen = document.getElementById('chatScreen');
-        
-        const usernameInput = document.getElementById('usernameInput');
-        const startBtn = document.getElementById('startBtn');
-        const backBtn = document.getElementById('backBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        const sendBtn = document.getElementById('sendBtn');
-        
-        const myUsernameDiv = document.getElementById('myUsername');
-        const nearbyUsersDiv = document.getElementById('nearbyUsers');
-        const messageInput = document.getElementById('messageInput');
-        const messagesDiv = document.getElementById('messages');
-        const statusDiv = document.getElementById('status');
-        const alertContainer = document.getElementById('alertContainer');
-        
-        const chatAvatar = document.getElementById('chatAvatar');
-        const chatUsername = document.getElementById('chatUsername');
-        const chatStatus = document.getElementById('chatStatus');
+        let dataChannel = null;
+        let isInitiator = false;
+        let roomCode = '';
+        let pollInterval = null;
 
         // WebRTC Configuration
         const config = {
@@ -439,11 +456,30 @@
             ]
         };
 
-        // Signaling storage
-        const signaling = {};
+        // UI Elements
+        const initialScreen = document.getElementById('initialScreen');
+        const createScreen = document.getElementById('createScreen');
+        const joinScreen = document.getElementById('joinScreen');
+        const chatScreen = document.getElementById('chatScreen');
+        
+        const createBtn = document.getElementById('createBtn');
+        const showJoinBtn = document.getElementById('showJoinBtn');
+        const joinBtn = document.getElementById('joinBtn');
+        const cancelCreateBtn = document.getElementById('cancelCreateBtn');
+        const cancelJoinBtn = document.getElementById('cancelJoinBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        
+        const roomCodeDiv = document.getElementById('roomCode');
+        const joinCodeInput = document.getElementById('joinCodeInput');
+        const messageInput = document.getElementById('messageInput');
+        const messagesDiv = document.getElementById('messages');
+        const statusDiv = document.getElementById('status');
+        const alertContainer = document.getElementById('alertContainer');
 
         function showScreen(screen) {
-            [setupScreen, scanScreen, chatScreen].forEach(s => s.classList.add('hidden'));
+            [initialScreen, createScreen, joinScreen, chatScreen].forEach(s => s.classList.add('hidden'));
             screen.classList.remove('hidden');
         }
 
@@ -460,127 +496,31 @@
             statusDiv.style.color = color;
         }
 
-        function startBroadcasting() {
-            myUsername = usernameInput.value.trim();
-            
-            if (!myUsername) {
-                showAlert('Please enter a nickname', 'error');
-                return;
-            }
-
-            myUsernameDiv.textContent = myUsername;
-            showScreen(scanScreen);
-            updateStatus('Broadcasting & Scanning', '#4ade80');
-
-            // Broadcast presence
-            broadcastPresence();
-            setInterval(broadcastPresence, 3000);
-
-            // Scan for others
-            scanForUsers();
-            setInterval(scanForUsers, 2000);
-
-            showAlert('You are now visible to nearby users!', 'success');
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 6).toUpperCase();
         }
 
-        function broadcastPresence() {
-            const myData = {
-                id: MY_ID,
-                username: myUsername,
-                timestamp: Date.now()
-            };
-
+        async function createRoom() {
             try {
-                const existing = JSON.parse(localStorage.getItem(BROADCAST_KEY) || '{}');
-                existing[MY_ID] = myData;
+                isInitiator = true;
+                roomCode = generateRoomCode();
+                roomCodeDiv.textContent = roomCode;
                 
-                // Clean old entries (>10 seconds)
-                const now = Date.now();
-                Object.keys(existing).forEach(id => {
-                    if (now - existing[id].timestamp > 10000) {
-                        delete existing[id];
-                    }
-                });
-                
-                localStorage.setItem(BROADCAST_KEY, JSON.stringify(existing));
-            } catch (e) {
-                console.error('Broadcast error:', e);
-            }
-        }
+                showScreen(createScreen);
+                updateStatus('Waiting for peer...', '#ffd700');
 
-        function scanForUsers() {
-            try {
-                const users = JSON.parse(localStorage.getItem(BROADCAST_KEY) || '{}');
-                const now = Date.now();
-                
-                // Update nearby users (exclude self and old entries)
-                nearbyUsers.clear();
-                Object.entries(users).forEach(([id, data]) => {
-                    if (id !== MY_ID && now - data.timestamp < 10000) {
-                        nearbyUsers.set(id, data);
-                    }
-                });
-
-                renderNearbyUsers();
-            } catch (e) {
-                console.error('Scan error:', e);
-            }
-        }
-
-        function renderNearbyUsers() {
-            if (nearbyUsers.size === 0) {
-                nearbyUsersDiv.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">👥</div>
-                        <div>No nearby users found</div>
-                        <div style="font-size: 12px; margin-top: 10px;">
-                            Make sure others have this page open
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            nearbyUsersDiv.innerHTML = '';
-            nearbyUsers.forEach((user, id) => {
-                const card = document.createElement('div');
-                card.className = 'user-card';
-                card.innerHTML = `
-                    <div class="user-info">
-                        <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
-                        <div class="user-details">
-                            <div class="user-name">${escapeHtml(user.username)}</div>
-                            <div class="user-distance">📍 Nearby</div>
-                        </div>
-                    </div>
-                    <div style="color: #667eea; font-weight: 600;">Connect →</div>
-                `;
-                card.onclick = () => connectToUser(id, user);
-                nearbyUsersDiv.appendChild(card);
-            });
-        }
-
-        async function connectToUser(userId, userData) {
-            try {
-                currentPeer = userData;
-                updateStatus('Connecting...', '#ffd700');
-                
                 // Create peer connection
                 peerConnection = new RTCPeerConnection(config);
-                
+
                 // Create data channel
                 dataChannel = peerConnection.createDataChannel('chat');
                 setupDataChannel();
 
-                // Handle ICE candidates
+                // Collect ICE candidates
+                const candidates = [];
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
-                        const offer = signaling[userId] || {};
-                        offer.candidates = offer.candidates || [];
-                        offer.candidates.push(event.candidate);
-                        offer.from = MY_ID;
-                        signaling[userId] = offer;
-                        localStorage.setItem('signaling_' + userId, JSON.stringify(offer));
+                        candidates.push(event.candidate);
                     }
                 };
 
@@ -588,107 +528,116 @@
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
 
-                // Store offer
+                // Wait for ICE gathering to complete
+                await new Promise(resolve => {
+                    if (peerConnection.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        peerConnection.addEventListener('icegatheringstatechange', () => {
+                            if (peerConnection.iceGatheringState === 'complete') {
+                                resolve();
+                            }
+                        });
+                    }
+                });
+
+                // Store offer with all candidates
                 const offerData = {
-                    offer: offer,
-                    candidates: [],
-                    from: MY_ID,
-                    to: userId,
+                    offer: peerConnection.localDescription,
+                    candidates: candidates,
                     timestamp: Date.now()
                 };
-                signaling[userId] = offerData;
-                localStorage.setItem('signaling_' + userId, JSON.stringify(offerData));
+
+                await window.storage.set(STORAGE_PREFIX + roomCode, JSON.stringify(offerData), true);
+                
+                showAlert('Room created! Share the code with the other person.', 'success');
 
                 // Poll for answer
-                pollForAnswer(userId);
-
-                showAlert('Connection request sent!', 'info');
+                pollForAnswer();
 
             } catch (error) {
-                console.error('Connect error:', error);
-                showAlert('Failed to connect: ' + error.message, 'error');
+                console.error('Create room error:', error);
+                showAlert('Failed to create room: ' + error.message, 'error');
+                showScreen(initialScreen);
             }
         }
 
-        function pollForAnswer(userId) {
-            const checkInterval = setInterval(() => {
+        async function pollForAnswer() {
+            pollInterval = setInterval(async () => {
                 try {
-                    const answerData = localStorage.getItem('signaling_answer_' + MY_ID);
-                    if (answerData && peerConnection) {
-                        const data = JSON.parse(answerData);
-                        if (data.from === userId) {
-                            clearInterval(checkInterval);
-                            handleAnswer(data);
+                    const result = await window.storage.get(STORAGE_PREFIX + roomCode + '_answer', true);
+                    
+                    if (result && peerConnection) {
+                        clearInterval(pollInterval);
+                        
+                        const answerData = JSON.parse(result.value);
+                        
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(answerData.answer));
+                        
+                        // Add remote ICE candidates
+                        if (answerData.candidates) {
+                            for (const candidate of answerData.candidates) {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                            }
                         }
+                        
+                        updateStatus('Connected!', '#4ade80');
+                        showAlert('Peer connected!', 'success');
                     }
-                } catch (e) {
-                    console.error('Poll error:', e);
+                } catch (error) {
+                    // Key doesn't exist yet, keep polling
+                    console.log('Waiting for answer...');
                 }
-            }, 1000);
+            }, 2000);
 
-            // Timeout
+            // Timeout after 2 minutes
             setTimeout(() => {
-                clearInterval(checkInterval);
-                if (!dataChannel || dataChannel.readyState !== 'open') {
-                    showAlert('Connection timeout', 'error');
-                    cleanup();
-                }
-            }, 30000);
-        }
-
-        async function handleAnswer(data) {
-            try {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                
-                if (data.candidates) {
-                    for (const candidate of data.candidates) {
-                        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    if (!dataChannel || dataChannel.readyState !== 'open') {
+                        showAlert('Connection timeout. Please try again.', 'error');
+                        cleanup();
+                        showScreen(initialScreen);
                     }
                 }
-                
-                updateStatus('Connected!', '#4ade80');
-            } catch (error) {
-                console.error('Answer error:', error);
-            }
+            }, 120000);
         }
 
-        // Listen for incoming connection requests
-        setInterval(() => {
-            try {
-                const offerData = localStorage.getItem('signaling_' + MY_ID);
-                if (offerData) {
-                    const data = JSON.parse(offerData);
-                    if (data.to === MY_ID && !peerConnection) {
-                        handleIncomingOffer(data);
-                        localStorage.removeItem('signaling_' + MY_ID);
-                    }
-                }
-            } catch (e) {
-                console.error('Listen error:', e);
+        async function joinRoom() {
+            const code = joinCodeInput.value.trim().toUpperCase();
+            
+            if (code.length !== 4) {
+                showAlert('Please enter a valid 4-character code', 'error');
+                return;
             }
-        }, 1000);
 
-        async function handleIncomingOffer(data) {
             try {
-                const fromUser = nearbyUsers.get(data.from);
-                if (!fromUser) return;
-
-                if (!confirm(`${fromUser.username} wants to connect. Accept?`)) {
+                updateStatus('Fetching room data...', '#ffd700');
+                
+                const result = await window.storage.get(STORAGE_PREFIX + code, true);
+                
+                if (!result) {
+                    showAlert('Room not found. Check the code and try again.', 'error');
                     return;
                 }
 
-                currentPeer = fromUser;
+                const offerData = JSON.parse(result.value);
                 
+                isInitiator = false;
+                roomCode = code;
+                
+                updateStatus('Connecting...', '#ffd700');
+
                 // Create peer connection
                 peerConnection = new RTCPeerConnection(config);
 
-                // Handle data channel
+                // Handle incoming data channel
                 peerConnection.ondatachannel = (event) => {
                     dataChannel = event.channel;
                     setupDataChannel();
                 };
 
-                // Handle ICE candidates
+                // Collect ICE candidates
                 const answerCandidates = [];
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
@@ -696,12 +645,12 @@
                     }
                 };
 
-                // Set remote description
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                // Set remote description (offer)
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData.offer));
 
-                // Add remote candidates
-                if (data.candidates) {
-                    for (const candidate of data.candidates) {
+                // Add remote ICE candidates
+                if (offerData.candidates) {
+                    for (const candidate of offerData.candidates) {
                         await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
                     }
                 }
@@ -710,21 +659,34 @@
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
 
+                // Wait for ICE gathering to complete
+                await new Promise(resolve => {
+                    if (peerConnection.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        peerConnection.addEventListener('icegatheringstatechange', () => {
+                            if (peerConnection.iceGatheringState === 'complete') {
+                                resolve();
+                            }
+                        });
+                    }
+                });
+
                 // Store answer
                 const answerData = {
-                    answer: answer,
+                    answer: peerConnection.localDescription,
                     candidates: answerCandidates,
-                    from: MY_ID,
-                    to: data.from,
                     timestamp: Date.now()
                 };
-                localStorage.setItem('signaling_answer_' + data.from, JSON.stringify(answerData));
 
-                updateStatus('Connected!', '#4ade80');
+                await window.storage.set(STORAGE_PREFIX + code + '_answer', JSON.stringify(answerData), true);
+
+                updateStatus('Waiting for connection...', '#ffd700');
+                showAlert('Sent connection response!', 'success');
 
             } catch (error) {
-                console.error('Incoming offer error:', error);
-                showAlert('Failed to accept connection', 'error');
+                console.error('Join room error:', error);
+                showAlert('Failed to join room: ' + error.message, 'error');
             }
         }
 
@@ -733,21 +695,21 @@
                 console.log('Data channel opened');
                 updateStatus('Connected!', '#4ade80');
                 showScreen(chatScreen);
-                
-                chatAvatar.textContent = currentPeer.username.charAt(0).toUpperCase();
-                chatUsername.textContent = currentPeer.username;
-                chatStatus.textContent = 'Connected';
-                
                 messagesDiv.innerHTML = '<div class="info-box">🎉 Connected! Start chatting...</div>';
                 messageInput.focus();
                 showAlert('Successfully connected!', 'success');
+                
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                }
             };
 
             dataChannel.onclose = () => {
                 console.log('Data channel closed');
+                updateStatus('Disconnected', '#ef4444');
                 showAlert('Connection closed', 'error');
                 cleanup();
-                showScreen(scanScreen);
+                showScreen(initialScreen);
             };
 
             dataChannel.onmessage = (event) => {
@@ -756,6 +718,7 @@
 
             dataChannel.onerror = (error) => {
                 console.error('Data channel error:', error);
+                showAlert('Connection error', 'error');
             };
         }
 
@@ -775,6 +738,12 @@
             
             messagesDiv.appendChild(msgDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function sendMessage() {
@@ -798,7 +767,12 @@
             }
         }
 
-        function cleanup() {
+        async function cleanup() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+
             if (dataChannel) {
                 dataChannel.close();
                 dataChannel = null;
@@ -809,28 +783,45 @@
                 peerConnection = null;
             }
 
-            currentPeer = null;
+            if (roomCode) {
+                try {
+                    await window.storage.delete(STORAGE_PREFIX + roomCode, true);
+                    await window.storage.delete(STORAGE_PREFIX + roomCode + '_answer', true);
+                } catch (e) {
+                    console.log('Cleanup error:', e);
+                }
+                roomCode = '';
+            }
+
+            isInitiator = false;
             updateStatus('Disconnected', '#ef4444');
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         // Event Listeners
-        startBtn.addEventListener('click', startBroadcasting);
+        createBtn.addEventListener('click', createRoom);
         
-        backBtn.addEventListener('click', () => {
-            showScreen(setupScreen);
-            updateStatus('Setup your profile', '#fff');
+        showJoinBtn.addEventListener('click', () => {
+            showScreen(joinScreen);
+            joinCodeInput.focus();
+        });
+
+        joinBtn.addEventListener('click', joinRoom);
+
+        cancelCreateBtn.addEventListener('click', () => {
+            cleanup();
+            showScreen(initialScreen);
+            updateStatus('Choose your role', '#fff');
+        });
+
+        cancelJoinBtn.addEventListener('click', () => {
+            showScreen(initialScreen);
+            updateStatus('Choose your role', '#fff');
         });
 
         disconnectBtn.addEventListener('click', () => {
             cleanup();
-            showScreen(scanScreen);
-            updateStatus('Broadcasting & Scanning', '#4ade80');
+            showScreen(initialScreen);
+            updateStatus('Choose your role', '#fff');
         });
 
         sendBtn.addEventListener('click', sendMessage);
@@ -841,17 +832,27 @@
             }
         });
 
-        // Auto-focus username input
-        usernameInput.focus();
-
-        // Clean up on page unload
-        window.addEventListener('beforeunload', () => {
-            try {
-                const users = JSON.parse(localStorage.getItem(BROADCAST_KEY) || '{}');
-                delete users[MY_ID];
-                localStorage.setItem(BROADCAST_KEY, JSON.stringify(users));
-            } catch (e) {}
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(roomCode).then(() => {
+                copyBtn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 Copy Code';
+                }, 2000);
+            }).catch(() => {
+                showAlert('Copy failed. Manually copy: ' + roomCode, 'warning');
+            });
         });
+
+        joinCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        // Check for storage support
+        if (!window.storage) {
+            showAlert('Persistent storage not available. This feature requires the Claude.ai environment.', 'error');
+            createBtn.disabled = true;
+            showJoinBtn.disabled = true;
+        }
     </script>
 </body>
 </html>
