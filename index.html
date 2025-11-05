@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bluetooth LE Chat</title>
+    <title>WiFi P2P Chat</title>
     <style>
         * {
             margin: 0;
@@ -49,7 +49,6 @@
         
         .connection-panel {
             padding: 20px;
-            border-bottom: 1px solid #e0e0e0;
         }
         
         .btn {
@@ -63,6 +62,7 @@
             cursor: pointer;
             width: 100%;
             transition: all 0.3s;
+            margin-bottom: 10px;
         }
         
         .btn:hover:not(:disabled) {
@@ -76,19 +76,82 @@
             transform: none;
         }
         
+        .btn-create {
+            background: #10b981;
+        }
+        
+        .btn-create:hover:not(:disabled) {
+            background: #059669;
+        }
+        
         .btn-disconnect {
             background: #ef4444;
-            margin-top: 10px;
         }
         
         .btn-disconnect:hover:not(:disabled) {
             background: #dc2626;
         }
         
+        .code-box {
+            background: #f3f4f6;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .code-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .code {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            letter-spacing: 3px;
+            user-select: all;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        
+        .code-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .code-input:focus {
+            border-color: #667eea;
+        }
+        
         .chat-container {
             height: 400px;
             display: flex;
             flex-direction: column;
+            border-top: 1px solid #e0e0e0;
         }
         
         .messages {
@@ -172,143 +235,186 @@
             width: auto;
         }
         
-        .error {
-            background: #fee;
-            color: #c33;
+        .alert {
             padding: 12px;
             margin: 10px 20px;
             border-radius: 8px;
             font-size: 14px;
         }
         
-        .info {
+        .alert-error {
+            background: #fee;
+            color: #c33;
+        }
+        
+        .alert-info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .info-box {
             padding: 20px;
             text-align: center;
             color: #666;
             font-size: 14px;
             line-height: 1.6;
         }
-        
-        .warning {
-            background: #fff3cd;
-            color: #856404;
-            padding: 12px;
-            margin: 10px 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-        
-        .device-info {
-            background: #f0f0f0;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #555;
+
+        .info-box strong {
+            color: #333;
         }
 
-        .note {
-            background: #e3f2fd;
-            padding: 15px;
-            margin: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #2196f3;
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
         }
 
-        .note-title {
-            font-weight: 600;
-            color: #1976d2;
-            margin-bottom: 8px;
+        .copy-btn:hover {
+            background: #5568d3;
         }
 
-        .note-content {
-            font-size: 13px;
-            color: #555;
-            line-height: 1.5;
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔵 Bluetooth Chat</h1>
-            <div class="status" id="status">Disconnected</div>
+            <h1>📡 WiFi P2P Chat</h1>
+            <div class="status" id="status">Ready to Connect</div>
         </div>
         
-        <div class="connection-panel">
-            <button class="btn" id="scanBtn">Scan for ANY Bluetooth Device</button>
-            <button class="btn btn-disconnect" id="disconnectBtn" style="display:none;">Disconnect</button>
-            <div class="device-info" id="deviceInfo" style="display:none;"></div>
-        </div>
+        <div id="alertContainer"></div>
         
-        <div id="errorMsg"></div>
-        
-        <div class="note">
-            <div class="note-title">⚠️ Why No Devices Appear?</div>
-            <div class="note-content">
-                <strong>Web Bluetooth can only scan for devices that are:</strong>
-                <br>• Actively advertising (broadcasting)
-                <br>• Bluetooth LE peripherals (not phones/laptops)
-                <br>• Within range and powered on
+        <!-- Initial Screen -->
+        <div id="initialScreen" class="connection-panel">
+            <div class="info-box">
+                <strong>Choose how to connect:</strong>
                 <br><br>
-                <strong>Examples of scannable devices:</strong>
-                <br>• Fitness trackers, smartwatches
-                <br>• Bluetooth speakers/headphones
-                <br>• Smart home devices (lights, thermometers)
-                <br>• Arduino/ESP32/Raspberry Pi
-                <br>• Heart rate monitors
-                <br><br>
-                📱 <strong>Regular phones/laptops won't appear</strong> - they're "central" devices like yours, not peripherals!
+                <strong>Create Room:</strong> Generate a code and share it
+                <br>
+                <strong>Join Room:</strong> Enter a code to connect
             </div>
+            <button class="btn btn-create" id="createBtn">Create New Room</button>
+            <button class="btn" id="showJoinBtn">Join Existing Room</button>
         </div>
 
-        <div class="chat-container" id="chatContainer" style="display:none;">
-            <div class="messages" id="messages">
-                <div class="info">Connected! Exploring device services...</div>
+        <!-- Create Room Screen -->
+        <div id="createScreen" class="connection-panel hidden">
+            <div class="code-box">
+                <div class="code-label">Your Room Code</div>
+                <div class="code" id="roomCode">----</div>
+                <button class="copy-btn" id="copyBtn">📋 Copy Code</button>
             </div>
-            <div class="input-area">
-                <input type="text" class="message-input" id="messageInput" placeholder="Type a message..." maxlength="200">
-                <button class="btn btn-send" id="sendBtn">Send</button>
+            <div class="info-box">
+                Share this code with the other person
+                <br>
+                Waiting for connection...
+            </div>
+            <button class="btn btn-disconnect" id="cancelCreateBtn">Cancel</button>
+        </div>
+
+        <!-- Join Room Screen -->
+        <div id="joinScreen" class="connection-panel hidden">
+            <div class="input-group">
+                <div class="input-label">Enter Room Code</div>
+                <input type="text" class="code-input" id="joinCodeInput" placeholder="XXXX" maxlength="4">
+            </div>
+            <button class="btn" id="joinBtn">Connect to Room</button>
+            <button class="btn btn-disconnect" id="cancelJoinBtn">Cancel</button>
+        </div>
+
+        <!-- Chat Screen -->
+        <div id="chatScreen" class="hidden">
+            <div class="chat-container">
+                <div class="messages" id="messages">
+                    <div class="info-box">🎉 Connected! Start chatting...</div>
+                </div>
+                <div class="input-area">
+                    <input type="text" class="message-input" id="messageInput" placeholder="Type a message..." maxlength="500">
+                    <button class="btn btn-send" id="sendBtn">Send</button>
+                </div>
+            </div>
+            <div class="connection-panel">
+                <button class="btn btn-disconnect" id="disconnectBtn">Disconnect</button>
             </div>
         </div>
     </div>
 
     <script>
-        let device = null;
-        let server = null;
-        let messageCharacteristic = null;
+        // WebRTC Configuration using free STUN servers
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        let peerConnection = null;
+        let dataChannel = null;
+        let isInitiator = false;
+        let roomCode = '';
+
+        // UI Elements
+        const initialScreen = document.getElementById('initialScreen');
+        const createScreen = document.getElementById('createScreen');
+        const joinScreen = document.getElementById('joinScreen');
+        const chatScreen = document.getElementById('chatScreen');
         
-        const scanBtn = document.getElementById('scanBtn');
+        const createBtn = document.getElementById('createBtn');
+        const showJoinBtn = document.getElementById('showJoinBtn');
+        const joinBtn = document.getElementById('joinBtn');
+        const cancelCreateBtn = document.getElementById('cancelCreateBtn');
+        const cancelJoinBtn = document.getElementById('cancelJoinBtn');
         const disconnectBtn = document.getElementById('disconnectBtn');
         const sendBtn = document.getElementById('sendBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        
+        const roomCodeDiv = document.getElementById('roomCode');
+        const joinCodeInput = document.getElementById('joinCodeInput');
         const messageInput = document.getElementById('messageInput');
         const messagesDiv = document.getElementById('messages');
         const statusDiv = document.getElementById('status');
-        const errorMsg = document.getElementById('errorMsg');
-        const chatContainer = document.getElementById('chatContainer');
-        const deviceInfo = document.getElementById('deviceInfo');
-        
-        // Check if Web Bluetooth is supported
-        if (!navigator.bluetooth) {
-            showError('Web Bluetooth API is not supported in this browser. Please use Chrome, Edge, or Opera on desktop/Android.');
-            scanBtn.disabled = true;
-        }
-        
-        function showError(message) {
-            errorMsg.innerHTML = `<div class="error">${message}</div>`;
-            setTimeout(() => errorMsg.innerHTML = '', 8000);
+        const alertContainer = document.getElementById('alertContainer');
+
+        // In-memory signaling (stores offers/answers temporarily)
+        const signaling = {};
+
+        function showScreen(screen) {
+            [initialScreen, createScreen, joinScreen, chatScreen].forEach(s => s.classList.add('hidden'));
+            screen.classList.remove('hidden');
         }
 
-        function showWarning(message) {
-            errorMsg.innerHTML = `<div class="warning">${message}</div>`;
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 6).toUpperCase();
         }
-        
+
+        function showAlert(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
         function updateStatus(status, color = '#fff') {
             statusDiv.textContent = status;
             statusDiv.style.color = color;
         }
-        
+
         function addMessage(text, isSent = false) {
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
@@ -326,197 +432,276 @@
             messagesDiv.appendChild(msgDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
-        
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-        
-        async function scanAndConnect() {
+
+        async function createRoom() {
             try {
-                errorMsg.innerHTML = '';
-                updateStatus('Opening device picker...', '#ffd700');
+                isInitiator = true;
+                roomCode = generateRoomCode();
+                roomCodeDiv.textContent = roomCode;
                 
-                // Scan for ANY Bluetooth LE device (no filters - will show device picker)
-                device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: ['battery_service', 'device_information', 'generic_access']
-                });
+                showScreen(createScreen);
+                updateStatus('Waiting for peer...', '#ffd700');
+
+                // Create peer connection
+                peerConnection = new RTCPeerConnection(config);
+
+                // Create data channel
+                dataChannel = peerConnection.createDataChannel('chat');
+                setupDataChannel();
+
+                // Handle ICE candidates
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const offer = signaling[roomCode] || {};
+                        offer.candidates = offer.candidates || [];
+                        offer.candidates.push(event.candidate);
+                        signaling[roomCode] = offer;
+                    }
+                };
+
+                // Create offer
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                // Store offer
+                signaling[roomCode] = {
+                    offer: offer,
+                    candidates: []
+                };
+
+                // Poll for answer
+                pollForAnswer();
+
+            } catch (error) {
+                console.error('Create room error:', error);
+                showAlert('Failed to create room: ' + error.message, 'error');
+                showScreen(initialScreen);
+            }
+        }
+
+        async function pollForAnswer() {
+            const checkInterval = setInterval(async () => {
+                const data = signaling[roomCode];
+                if (data && data.answer && peerConnection) {
+                    clearInterval(checkInterval);
+                    
+                    try {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                        
+                        // Add remote ICE candidates
+                        if (data.answerCandidates) {
+                            for (const candidate of data.answerCandidates) {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                            }
+                        }
+                        
+                        updateStatus('Connected!', '#4ade80');
+                    } catch (error) {
+                        console.error('Error setting remote description:', error);
+                        showAlert('Connection failed', 'error');
+                    }
+                }
+            }, 1000);
+
+            // Timeout after 60 seconds
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                if (!dataChannel || dataChannel.readyState !== 'open') {
+                    showAlert('Connection timeout. Please try again.', 'error');
+                    cleanup();
+                    showScreen(initialScreen);
+                }
+            }, 60000);
+        }
+
+        async function joinRoom() {
+            const code = joinCodeInput.value.trim().toUpperCase();
+            
+            if (code.length !== 4) {
+                showAlert('Please enter a valid 4-character code', 'error');
+                return;
+            }
+
+            const offerData = signaling[code];
+            if (!offerData || !offerData.offer) {
+                showAlert('Room not found. Check the code and try again.', 'error');
+                return;
+            }
+
+            try {
+                isInitiator = false;
+                roomCode = code;
                 
                 updateStatus('Connecting...', '#ffd700');
-                
-                // Connect to GATT server
-                server = await device.gatt.connect();
-                
-                updateStatus(`Connected to ${device.name || 'Device'}`, '#4ade80');
-                deviceInfo.textContent = `Device: ${device.name || 'Unknown'} (${device.id})`;
-                deviceInfo.style.display = 'block';
-                
-                scanBtn.style.display = 'none';
-                disconnectBtn.style.display = 'block';
-                chatContainer.style.display = 'flex';
-                
-                messagesDiv.innerHTML = '';
-                
-                // Try to discover services
-                try {
-                    addMessage('🔍 Discovering services...', false);
-                    const services = await server.getPrimaryServices();
-                    
-                    addMessage(`Found ${services.length} service(s)`, false);
-                    
-                    let foundWritableChar = false;
-                    
-                    // Look for writable characteristics
-                    for (const service of services) {
-                        try {
-                            const characteristics = await service.getCharacteristics();
-                            
-                            for (const char of characteristics) {
-                                const props = char.properties;
-                                
-                                // Look for characteristics that support write and notify
-                                if (props.write || props.writeWithoutResponse) {
-                                    if (props.notify) {
-                                        messageCharacteristic = char;
-                                        await char.startNotifications();
-                                        char.addEventListener('characteristicvaluechanged', handleMessageReceived);
-                                        foundWritableChar = true;
-                                        addMessage('✅ Found compatible characteristic for messaging!', false);
-                                        break;
-                                    }
-                                }
-                            }
-                            if (foundWritableChar) break;
-                        } catch (e) {
-                            console.log('Error reading service:', e);
-                        }
+
+                // Create peer connection
+                peerConnection = new RTCPeerConnection(config);
+
+                // Handle incoming data channel
+                peerConnection.ondatachannel = (event) => {
+                    dataChannel = event.channel;
+                    setupDataChannel();
+                };
+
+                // Handle ICE candidates
+                const answerCandidates = [];
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        answerCandidates.push(event.candidate);
+                        signaling[roomCode].answerCandidates = answerCandidates;
                     }
-                    
-                    if (!foundWritableChar) {
-                        showWarning('⚠️ This device doesn\'t have a compatible characteristic for two-way messaging. You can try sending messages, but it may not work as a chat.');
-                        addMessage('⚠️ Device connected but may not support chat functionality', false);
-                    } else {
-                        addMessage('🎉 Ready to chat!', false);
+                };
+
+                // Set remote description (offer)
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData.offer));
+
+                // Add remote ICE candidates
+                if (offerData.candidates) {
+                    for (const candidate of offerData.candidates) {
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
                     }
-                    
-                } catch (error) {
-                    console.error('Service discovery error:', error);
-                    addMessage('⚠️ Could not discover services. Basic connection established.', false);
-                    showWarning('Device connected but service discovery failed. Chat may not work.');
                 }
-                
-                // Handle disconnection
-                device.addEventListener('gattserverdisconnected', handleDisconnection);
-                
-                messageInput.focus();
-                
+
+                // Create answer
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                // Store answer
+                signaling[roomCode].answer = answer;
+
+                updateStatus('Connected!', '#4ade80');
+
             } catch (error) {
-                console.error('Connection error:', error);
-                
-                if (error.name === 'NotFoundError') {
-                    showError('No device selected. Click the button and select a device from the list.');
-                } else if (error.name === 'SecurityError') {
-                    showError('Bluetooth access denied. Check site permissions and ensure you\'re using HTTPS.');
-                } else if (error.name === 'NetworkError') {
-                    showError('Connection failed. Make sure Bluetooth is enabled and the device is in range.');
-                } else {
-                    showError(`Error: ${error.message}`);
-                }
-                
+                console.error('Join room error:', error);
+                showAlert('Failed to join room: ' + error.message, 'error');
+            }
+        }
+
+        function setupDataChannel() {
+            dataChannel.onopen = () => {
+                console.log('Data channel opened');
+                updateStatus('Connected!', '#4ade80');
+                showScreen(chatScreen);
+                messagesDiv.innerHTML = '<div class="info-box">🎉 Connected! Start chatting...</div>';
+                messageInput.focus();
+                showAlert('Successfully connected!', 'success');
+            };
+
+            dataChannel.onclose = () => {
+                console.log('Data channel closed');
                 updateStatus('Disconnected', '#ef4444');
+                showAlert('Connection closed', 'error');
                 cleanup();
-            }
+                showScreen(initialScreen);
+            };
+
+            dataChannel.onmessage = (event) => {
+                addMessage(event.data, false);
+            };
+
+            dataChannel.onerror = (error) => {
+                console.error('Data channel error:', error);
+                showAlert('Connection error', 'error');
+            };
         }
-        
-        function handleMessageReceived(event) {
-            const value = event.target.value;
-            const decoder = new TextDecoder('utf-8');
-            try {
-                const message = decoder.decode(value);
-                if (message.trim()) {
-                    addMessage(message, false);
-                }
-            } catch (e) {
-                addMessage('[Received binary data]', false);
-            }
-        }
-        
-        async function sendMessage() {
+
+        function sendMessage() {
             const message = messageInput.value.trim();
             
             if (!message) return;
             
-            if (!messageCharacteristic) {
-                showError('No writable characteristic found. This device may not support messaging.');
+            if (!dataChannel || dataChannel.readyState !== 'open') {
+                showAlert('Not connected', 'error');
                 return;
             }
-            
+
             try {
-                const encoder = new TextEncoder();
-                const data = encoder.encode(message);
-                
-                await messageCharacteristic.writeValue(data);
-                
+                dataChannel.send(message);
                 addMessage(message, true);
                 messageInput.value = '';
                 messageInput.focus();
-                
             } catch (error) {
                 console.error('Send error:', error);
-                showError(`Failed to send: ${error.message}`);
+                showAlert('Failed to send message', 'error');
             }
         }
-        
-        function handleDisconnection() {
-            console.log('Device disconnected');
-            updateStatus('Disconnected', '#ef4444');
-            showError('Device disconnected');
-            cleanup();
-        }
-        
+
         function cleanup() {
-            if (messageCharacteristic) {
-                messageCharacteristic.removeEventListener('characteristicvaluechanged', handleMessageReceived);
-                messageCharacteristic = null;
+            if (dataChannel) {
+                dataChannel.close();
+                dataChannel = null;
             }
-            
-            server = null;
-            
-            if (device) {
-                device.removeEventListener('gattserverdisconnected', handleDisconnection);
-                device = null;
+
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
             }
-            
-            scanBtn.style.display = 'block';
-            disconnectBtn.style.display = 'none';
-            chatContainer.style.display = 'none';
-            deviceInfo.style.display = 'none';
-        }
-        
-        async function disconnect() {
-            if (server && server.connected) {
-                await server.disconnect();
+
+            if (roomCode) {
+                delete signaling[roomCode];
+                roomCode = '';
             }
+
+            isInitiator = false;
             updateStatus('Disconnected', '#ef4444');
-            cleanup();
         }
+
+        // Event Listeners
+        createBtn.addEventListener('click', createRoom);
         
-        // Event listeners
-        scanBtn.addEventListener('click', scanAndConnect);
-        disconnectBtn.addEventListener('click', disconnect);
+        showJoinBtn.addEventListener('click', () => {
+            showScreen(joinScreen);
+            joinCodeInput.focus();
+        });
+
+        joinBtn.addEventListener('click', joinRoom);
+
+        cancelCreateBtn.addEventListener('click', () => {
+            cleanup();
+            showScreen(initialScreen);
+        });
+
+        cancelJoinBtn.addEventListener('click', () => {
+            showScreen(initialScreen);
+        });
+
+        disconnectBtn.addEventListener('click', () => {
+            cleanup();
+            showScreen(initialScreen);
+        });
+
         sendBtn.addEventListener('click', sendMessage);
-        
+
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
-        
-        // Check HTTPS requirement
-        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-            showError('⚠️ Web Bluetooth requires HTTPS or localhost. This page may not work correctly.');
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(roomCode).then(() => {
+                copyBtn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 Copy Code';
+                }, 2000);
+            });
+        });
+
+        joinCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        // Check for WebRTC support
+        if (!window.RTCPeerConnection) {
+            showAlert('WebRTC is not supported in this browser', 'error');
+            createBtn.disabled = true;
+            showJoinBtn.disabled = true;
         }
     </script>
 </body>
