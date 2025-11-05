@@ -186,6 +186,17 @@
             text-align: center;
             color: #666;
             font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            margin: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
         }
         
         .device-info {
@@ -195,6 +206,26 @@
             border-radius: 8px;
             font-size: 13px;
             color: #555;
+        }
+
+        .note {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .note-title {
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+
+        .note-content {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -206,38 +237,46 @@
         </div>
         
         <div class="connection-panel">
-            <button class="btn" id="scanBtn">Scan & Connect</button>
+            <button class="btn" id="scanBtn">Scan for ANY Bluetooth Device</button>
             <button class="btn btn-disconnect" id="disconnectBtn" style="display:none;">Disconnect</button>
             <div class="device-info" id="deviceInfo" style="display:none;"></div>
         </div>
         
         <div id="errorMsg"></div>
         
+        <div class="note">
+            <div class="note-title">⚠️ Why No Devices Appear?</div>
+            <div class="note-content">
+                <strong>Web Bluetooth can only scan for devices that are:</strong>
+                <br>• Actively advertising (broadcasting)
+                <br>• Bluetooth LE peripherals (not phones/laptops)
+                <br>• Within range and powered on
+                <br><br>
+                <strong>Examples of scannable devices:</strong>
+                <br>• Fitness trackers, smartwatches
+                <br>• Bluetooth speakers/headphones
+                <br>• Smart home devices (lights, thermometers)
+                <br>• Arduino/ESP32/Raspberry Pi
+                <br>• Heart rate monitors
+                <br><br>
+                📱 <strong>Regular phones/laptops won't appear</strong> - they're "central" devices like yours, not peripherals!
+            </div>
+        </div>
+
         <div class="chat-container" id="chatContainer" style="display:none;">
             <div class="messages" id="messages">
-                <div class="info">Connected! Start chatting...</div>
+                <div class="info">Connected! Exploring device services...</div>
             </div>
             <div class="input-area">
                 <input type="text" class="message-input" id="messageInput" placeholder="Type a message..." maxlength="200">
                 <button class="btn btn-send" id="sendBtn">Send</button>
             </div>
         </div>
-        
-        <div class="info" id="initialInfo">
-            Click "Scan & Connect" to find nearby Bluetooth devices and start chatting.
-            <br><br>
-            <strong>Note:</strong> Both devices need this page open. This requires HTTPS/localhost.
-        </div>
     </div>
 
     <script>
-        // Custom GATT Service and Characteristic UUIDs for our chat app
-        const CHAT_SERVICE_UUID = '12345678-1234-1234-1234-123456789abc';
-        const MESSAGE_CHAR_UUID = '12345678-1234-1234-1234-123456789abd';
-        
         let device = null;
         let server = null;
-        let service = null;
         let messageCharacteristic = null;
         
         const scanBtn = document.getElementById('scanBtn');
@@ -248,7 +287,6 @@
         const statusDiv = document.getElementById('status');
         const errorMsg = document.getElementById('errorMsg');
         const chatContainer = document.getElementById('chatContainer');
-        const initialInfo = document.getElementById('initialInfo');
         const deviceInfo = document.getElementById('deviceInfo');
         
         // Check if Web Bluetooth is supported
@@ -259,7 +297,11 @@
         
         function showError(message) {
             errorMsg.innerHTML = `<div class="error">${message}</div>`;
-            setTimeout(() => errorMsg.innerHTML = '', 5000);
+            setTimeout(() => errorMsg.innerHTML = '', 8000);
+        }
+
+        function showWarning(message) {
+            errorMsg.innerHTML = `<div class="warning">${message}</div>`;
         }
         
         function updateStatus(status, color = '#fff') {
@@ -294,12 +336,12 @@
         async function scanAndConnect() {
             try {
                 errorMsg.innerHTML = '';
-                updateStatus('Scanning...', '#ffd700');
+                updateStatus('Opening device picker...', '#ffd700');
                 
-                // Request device with our custom service
+                // Scan for ANY Bluetooth LE device (no filters - will show device picker)
                 device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: [CHAT_SERVICE_UUID] }],
-                    optionalServices: [CHAT_SERVICE_UUID]
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service', 'device_information', 'generic_access']
                 });
                 
                 updateStatus('Connecting...', '#ffd700');
@@ -307,42 +349,80 @@
                 // Connect to GATT server
                 server = await device.gatt.connect();
                 
-                // Get our chat service
-                service = await server.getPrimaryService(CHAT_SERVICE_UUID);
-                
-                // Get message characteristic
-                messageCharacteristic = await service.getCharacteristic(MESSAGE_CHAR_UUID);
-                
-                // Subscribe to notifications
-                await messageCharacteristic.startNotifications();
-                messageCharacteristic.addEventListener('characteristicvaluechanged', handleMessageReceived);
-                
-                // Handle disconnection
-                device.addEventListener('gattserverdisconnected', handleDisconnection);
-                
                 updateStatus(`Connected to ${device.name || 'Device'}`, '#4ade80');
                 deviceInfo.textContent = `Device: ${device.name || 'Unknown'} (${device.id})`;
                 deviceInfo.style.display = 'block';
                 
                 scanBtn.style.display = 'none';
                 disconnectBtn.style.display = 'block';
-                initialInfo.style.display = 'none';
                 chatContainer.style.display = 'flex';
                 
-                messagesDiv.innerHTML = '<div class="info">Connected! Start chatting...</div>';
+                messagesDiv.innerHTML = '';
+                
+                // Try to discover services
+                try {
+                    addMessage('🔍 Discovering services...', false);
+                    const services = await server.getPrimaryServices();
+                    
+                    addMessage(`Found ${services.length} service(s)`, false);
+                    
+                    let foundWritableChar = false;
+                    
+                    // Look for writable characteristics
+                    for (const service of services) {
+                        try {
+                            const characteristics = await service.getCharacteristics();
+                            
+                            for (const char of characteristics) {
+                                const props = char.properties;
+                                
+                                // Look for characteristics that support write and notify
+                                if (props.write || props.writeWithoutResponse) {
+                                    if (props.notify) {
+                                        messageCharacteristic = char;
+                                        await char.startNotifications();
+                                        char.addEventListener('characteristicvaluechanged', handleMessageReceived);
+                                        foundWritableChar = true;
+                                        addMessage('✅ Found compatible characteristic for messaging!', false);
+                                        break;
+                                    }
+                                }
+                            }
+                            if (foundWritableChar) break;
+                        } catch (e) {
+                            console.log('Error reading service:', e);
+                        }
+                    }
+                    
+                    if (!foundWritableChar) {
+                        showWarning('⚠️ This device doesn\'t have a compatible characteristic for two-way messaging. You can try sending messages, but it may not work as a chat.');
+                        addMessage('⚠️ Device connected but may not support chat functionality', false);
+                    } else {
+                        addMessage('🎉 Ready to chat!', false);
+                    }
+                    
+                } catch (error) {
+                    console.error('Service discovery error:', error);
+                    addMessage('⚠️ Could not discover services. Basic connection established.', false);
+                    showWarning('Device connected but service discovery failed. Chat may not work.');
+                }
+                
+                // Handle disconnection
+                device.addEventListener('gattserverdisconnected', handleDisconnection);
+                
                 messageInput.focus();
                 
             } catch (error) {
                 console.error('Connection error:', error);
                 
                 if (error.name === 'NotFoundError') {
-                    showError('No device found. Make sure the other device is advertising the chat service.');
+                    showError('No device selected. Click the button and select a device from the list.');
                 } else if (error.name === 'SecurityError') {
-                    showError('Bluetooth access denied. Check site permissions.');
+                    showError('Bluetooth access denied. Check site permissions and ensure you\'re using HTTPS.');
                 } else if (error.name === 'NetworkError') {
                     showError('Connection failed. Make sure Bluetooth is enabled and the device is in range.');
                 } else {
-                    showError(`Connection error: ${error.message}`);
+                    showError(`Error: ${error.message}`);
                 }
                 
                 updateStatus('Disconnected', '#ef4444');
@@ -353,10 +433,13 @@
         function handleMessageReceived(event) {
             const value = event.target.value;
             const decoder = new TextDecoder('utf-8');
-            const message = decoder.decode(value);
-            
-            if (message.trim()) {
-                addMessage(message, false);
+            try {
+                const message = decoder.decode(value);
+                if (message.trim()) {
+                    addMessage(message, false);
+                }
+            } catch (e) {
+                addMessage('[Received binary data]', false);
             }
         }
         
@@ -366,7 +449,7 @@
             if (!message) return;
             
             if (!messageCharacteristic) {
-                showError('Not connected to a device');
+                showError('No writable characteristic found. This device may not support messaging.');
                 return;
             }
             
@@ -382,7 +465,7 @@
                 
             } catch (error) {
                 console.error('Send error:', error);
-                showError(`Failed to send message: ${error.message}`);
+                showError(`Failed to send: ${error.message}`);
             }
         }
         
@@ -399,7 +482,6 @@
                 messageCharacteristic = null;
             }
             
-            service = null;
             server = null;
             
             if (device) {
@@ -410,7 +492,6 @@
             scanBtn.style.display = 'block';
             disconnectBtn.style.display = 'none';
             chatContainer.style.display = 'none';
-            initialInfo.style.display = 'block';
             deviceInfo.style.display = 'none';
         }
         
