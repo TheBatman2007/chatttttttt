@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluetooth LE Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .status {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .connection-panel {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-disconnect {
+            background: #ef4444;
+            margin-top: 10px;
+        }
+        
+        .btn-disconnect:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        .chat-container {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message-sent {
+            text-align: right;
+        }
+        
+        .message-bubble {
+            display: inline-block;
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            word-wrap: break-word;
+        }
+        
+        .message-received .message-bubble {
+            background: #e5e7eb;
+            color: #1f2937;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-sent .message-bubble {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 4px;
+        }
+        
+        .input-area {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .message-input:focus {
+            border-color: #667eea;
+        }
+        
+        .btn-send {
+            padding: 12px 20px;
+            width: auto;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            margin: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .info {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .device-info {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔵 Bluetooth Chat</h1>
+            <div class="status" id="status">Disconnected</div>
+        </div>
+        
+        <div class="connection-panel">
+            <button class="btn" id="scanBtn">Scan & Connect</button>
+            <button class="btn btn-disconnect" id="disconnectBtn" style="display:none;">Disconnect</button>
+            <div class="device-info" id="deviceInfo" style="display:none;"></div>
+        </div>
+        
+        <div id="errorMsg"></div>
+        
+        <div class="chat-container" id="chatContainer" style="display:none;">
+            <div class="messages" id="messages">
+                <div class="info">Connected! Start chatting...</div>
+            </div>
+            <div class="input-area">
+                <input type="text" class="message-input" id="messageInput" placeholder="Type a message..." maxlength="200">
+                <button class="btn btn-send" id="sendBtn">Send</button>
+            </div>
+        </div>
+        
+        <div class="info" id="initialInfo">
+            Click "Scan & Connect" to find nearby Bluetooth devices and start chatting.
+            <br><br>
+            <strong>Note:</strong> Both devices need this page open. This requires HTTPS/localhost.
+        </div>
+    </div>
+
+    <script>
+        // Custom GATT Service and Characteristic UUIDs for our chat app
+        const CHAT_SERVICE_UUID = '12345678-1234-1234-1234-123456789abc';
+        const MESSAGE_CHAR_UUID = '12345678-1234-1234-1234-123456789abd';
+        
+        let device = null;
+        let server = null;
+        let service = null;
+        let messageCharacteristic = null;
+        
+        const scanBtn = document.getElementById('scanBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const messageInput = document.getElementById('messageInput');
+        const messagesDiv = document.getElementById('messages');
+        const statusDiv = document.getElementById('status');
+        const errorMsg = document.getElementById('errorMsg');
+        const chatContainer = document.getElementById('chatContainer');
+        const initialInfo = document.getElementById('initialInfo');
+        const deviceInfo = document.getElementById('deviceInfo');
+        
+        // Check if Web Bluetooth is supported
+        if (!navigator.bluetooth) {
+            showError('Web Bluetooth API is not supported in this browser. Please use Chrome, Edge, or Opera on desktop/Android.');
+            scanBtn.disabled = true;
+        }
+        
+        function showError(message) {
+            errorMsg.innerHTML = `<div class="error">${message}</div>`;
+            setTimeout(() => errorMsg.innerHTML = '', 5000);
+        }
+        
+        function updateStatus(status, color = '#fff') {
+            statusDiv.textContent = status;
+            statusDiv.style.color = color;
+        }
+        
+        function addMessage(text, isSent = false) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+            
+            const time = new Date().toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            msgDiv.innerHTML = `
+                <div class="message-bubble">${escapeHtml(text)}</div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function scanAndConnect() {
+            try {
+                errorMsg.innerHTML = '';
+                updateStatus('Scanning...', '#ffd700');
+                
+                // Request device with our custom service
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [CHAT_SERVICE_UUID] }],
+                    optionalServices: [CHAT_SERVICE_UUID]
+                });
+                
+                updateStatus('Connecting...', '#ffd700');
+                
+                // Connect to GATT server
+                server = await device.gatt.connect();
+                
+                // Get our chat service
+                service = await server.getPrimaryService(CHAT_SERVICE_UUID);
+                
+                // Get message characteristic
+                messageCharacteristic = await service.getCharacteristic(MESSAGE_CHAR_UUID);
+                
+                // Subscribe to notifications
+                await messageCharacteristic.startNotifications();
+                messageCharacteristic.addEventListener('characteristicvaluechanged', handleMessageReceived);
+                
+                // Handle disconnection
+                device.addEventListener('gattserverdisconnected', handleDisconnection);
+                
+                updateStatus(`Connected to ${device.name || 'Device'}`, '#4ade80');
+                deviceInfo.textContent = `Device: ${device.name || 'Unknown'} (${device.id})`;
+                deviceInfo.style.display = 'block';
+                
+                scanBtn.style.display = 'none';
+                disconnectBtn.style.display = 'block';
+                initialInfo.style.display = 'none';
+                chatContainer.style.display = 'flex';
+                
+                messagesDiv.innerHTML = '<div class="info">Connected! Start chatting...</div>';
+                messageInput.focus();
+                
+            } catch (error) {
+                console.error('Connection error:', error);
+                
+                if (error.name === 'NotFoundError') {
+                    showError('No device found. Make sure the other device is advertising the chat service.');
+                } else if (error.name === 'SecurityError') {
+                    showError('Bluetooth access denied. Check site permissions.');
+                } else if (error.name === 'NetworkError') {
+                    showError('Connection failed. Make sure Bluetooth is enabled and the device is in range.');
+                } else {
+                    showError(`Connection error: ${error.message}`);
+                }
+                
+                updateStatus('Disconnected', '#ef4444');
+                cleanup();
+            }
+        }
+        
+        function handleMessageReceived(event) {
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const message = decoder.decode(value);
+            
+            if (message.trim()) {
+                addMessage(message, false);
+            }
+        }
+        
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            if (!messageCharacteristic) {
+                showError('Not connected to a device');
+                return;
+            }
+            
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(message);
+                
+                await messageCharacteristic.writeValue(data);
+                
+                addMessage(message, true);
+                messageInput.value = '';
+                messageInput.focus();
+                
+            } catch (error) {
+                console.error('Send error:', error);
+                showError(`Failed to send message: ${error.message}`);
+            }
+        }
+        
+        function handleDisconnection() {
+            console.log('Device disconnected');
+            updateStatus('Disconnected', '#ef4444');
+            showError('Device disconnected');
+            cleanup();
+        }
+        
+        function cleanup() {
+            if (messageCharacteristic) {
+                messageCharacteristic.removeEventListener('characteristicvaluechanged', handleMessageReceived);
+                messageCharacteristic = null;
+            }
+            
+            service = null;
+            server = null;
+            
+            if (device) {
+                device.removeEventListener('gattserverdisconnected', handleDisconnection);
+                device = null;
+            }
+            
+            scanBtn.style.display = 'block';
+            disconnectBtn.style.display = 'none';
+            chatContainer.style.display = 'none';
+            initialInfo.style.display = 'block';
+            deviceInfo.style.display = 'none';
+        }
+        
+        async function disconnect() {
+            if (server && server.connected) {
+                await server.disconnect();
+            }
+            updateStatus('Disconnected', '#ef4444');
+            cleanup();
+        }
+        
+        // Event listeners
+        scanBtn.addEventListener('click', scanAndConnect);
+        disconnectBtn.addEventListener('click', disconnect);
+        sendBtn.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Check HTTPS requirement
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            showError('⚠️ Web Bluetooth requires HTTPS or localhost. This page may not work correctly.');
+        }
+    </script>
+</body>
+</html>
