@@ -9,41 +9,221 @@
     body{
       background:#000;
       display:flex;
-      justify-content:center;
+      justify-content:space-between;
       align-items:center;
       min-height:100vh;
       overflow:hidden;
       cursor:pointer;
+      position:relative;
     }
-    video{width:100%;height:100vh;object-fit:contain}
+    #terminalBg{
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:#000;
+      color:#fff;
+      font-family:'Courier New',monospace;
+      font-size:12px;
+      overflow:hidden;
+      z-index:1;
+      line-height:1.2;
+      display:flex;
+      justify-content:space-between;
+      pointer-events:none;
+    }
+    .terminal-column{
+      width:30%;
+      padding:10px;
+      overflow:hidden;
+    }
+    .terminal-line{
+      white-space:pre;
+      opacity:0.9;
+    }
+    video{
+      width:40%;
+      height:100vh;
+      object-fit:contain;
+      position:relative;
+      z-index:2;
+      margin:0 auto;
+    }
   </style>
 </head>
 <body>
+  <div id="terminalBg">
+    <div class="terminal-column" id="terminalLeft"></div>
+    <div class="terminal-column" id="terminalRight"></div>
+  </div>
   <video id="mainVideo" playsinline preload="auto" autoplay muted>
     <source src="rigby.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
-
   <script>
+    const terminalLeft = document.getElementById('terminalLeft');
+    const terminalRight = document.getElementById('terminalRight');
     const video = document.getElementById('mainVideo');
-
     let interactionHandled = false;
 
+    // Terminal animation - fill entire screen with two columns
+    const commands = [
+      'Initializing system boot sequence...',
+      'Loading kernel modules... [OK]',
+      'Starting network interfaces... eth0: UP',
+      'Mounting filesystems: /dev/sda1 on / type ext4',
+      'Starting system logger: rsyslogd [OK]',
+      'Checking disk space: 47% used, 234GB free',
+      'Starting cron daemon... [OK]',
+      'Configuring firewall rules: iptables loaded',
+      'SSH daemon listening on port 22',
+      'Apache2 web server started on :80',
+      'MySQL database service running on 3306',
+      'PHP-FPM process manager started',
+      'Redis server v6.2.6 64 bit ready',
+      'Docker daemon initialized successfully',
+      'Starting 12 containers... [3/12] complete',
+      'Nginx reverse proxy configured',
+      'SSL certificates valid until 2026-03-15',
+      'MongoDB replica set status: PRIMARY',
+      'RabbitMQ message broker ready',
+      'Elasticsearch cluster health: GREEN',
+      'Checking system updates... 47 packages',
+      'Security patches available: kernel, openssl',
+      'CPU usage: 23% | Memory: 4.2GB/16GB',
+      'Load average: 0.87, 0.92, 0.78',
+      'Active connections: 1,247 established',
+      'Network throughput: 128Mbps down, 45Mbps up',
+      'Disk I/O: 342 read/s, 189 write/s',
+      'Temperature sensors: CPU 52°C, GPU 47°C',
+      'Fan speeds: CPU 1850 RPM, Case 1200 RPM',
+      'Battery status: 100% charged, AC connected',
+      'Bluetooth devices: 3 paired, 1 connected',
+      'WiFi signal strength: -42 dBm (Excellent)',
+      'VPN tunnel established: AES-256 encrypted',
+      'Tor circuit built: 3 hops, exit node: NL',
+      'DNS queries: 8.8.8.8, 1.1.1.1 responding',
+      'NTP time sync: drift 0.003s, stratum 2',
+      'Kernel version: 5.15.0-89-generic x86_64',
+      'Uptime: 47 days, 13:28:42, 2 users logged',
+      'Running processes: 347 total, 2 active',
+      'Zombie processes: 0, sleeping: 345',
+      'Swap usage: 128MB/8GB (1.6%)',
+      'File descriptors: 12,847/1,048,576 open',
+      'TCP connections: SYN_SENT 12, ESTABLISHED 89',
+      'UDP sockets: 34 open, multicast groups: 8',
+      'ARP cache: 23 entries, 2 incomplete',
+      'Routing table: 5 routes, default via 192.168.1.1',
+      'IPv6 enabled: 4 addresses configured',
+      'Firewall rules: 127 active, 3,429 packets blocked',
+      'SELinux status: enforcing, 0 denials',
+      'AppArmor profiles: 42 loaded, 39 enforced',
+      'Systemd targets: multi-user.target reached',
+      'Journal size: 2.3GB, vacuum threshold: 4GB',
+      'Coredump storage: 0 dumps, 0MB used',
+      'Login sessions: 2 active, 156 total today',
+      'Failed login attempts: 7 in last 24 hours',
+      'User processes: root(89) www-data(47) mysql(12)',
+      'Group assignments: 47 groups, 234 members',
+      'Sudo commands executed: 1,847 this month',
+      'Package manager cache: 847MB, 3,429 packages',
+      'Automatic updates: enabled, last run 6h ago',
+      'System notifications: 3 pending, 12 dismissed',
+      'Hardware interrupts: 847,392 total, 234/sec',
+      'Context switches: 1,847,392 total, 4,892/sec',
+      'Page faults: 47,392 minor, 23 major',
+      'Block device stats: sda 847MB read, 234MB write',
+      'Network interfaces: lo, eth0, docker0, wlan0',
+      'Bridge interfaces: br-847a3b2c9d1f active',
+      'Virtual interfaces: 12 tun/tap devices',
+      'VLAN tagging: disabled, trunk ports: 0',
+      'QoS policies: 3 active, bandwidth shaping on',
+      'Traffic shaping: ingress 100Mbps, egress 50Mbps',
+      'Packet filter rules: 89 INPUT, 47 FORWARD, 23 OUTPUT',
+      'NAT translations: 847 active, 234 expired',
+      'Connection tracking: 12,847/65,536 entries',
+      'ICMP rate limiting: 100 pkt/s, 47 dropped',
+      'SYN flood protection: enabled, threshold 200/s',
+      'Port scanning detection: 12 attempts blocked',
+      'Intrusion detection: 3 alerts, 0 critical',
+      'Log rotation: 47 files, 2.3GB total size',
+      'Backup status: last full 2025-11-15 03:00',
+      'Incremental backup: 234MB, 47 files changed',
+      'Snapshot created: /dev/mapper/vg0-lv_root',
+      'LVM volumes: 3 logical, 2 physical devices',
+      'RAID status: md0 clean, all disks operational',
+      'SMART status: all drives PASSED, 0 errors',
+      'SSD wear level: 3% (estimated 15 years remain)',
+      'NVMe temperature: 42°C, throttling: no',
+      'PCIe link speed: Gen3 x4, 32Gbps capable',
+      'USB devices: 7 connected, 12 recognized',
+      'PCI devices: 23 enumerated, all functional',
+      'ACPI events: 847 total, 12 lid close/open',
+      'Power management: CPU frequency scaling active',
+      'Turbo boost: available, currently enabled',
+      'CPU governor: powersave, 1.8-4.2 GHz range',
+      'GPU mode: integrated, discrete: suspended',
+      'Display server: X.Org 1.21.1, 1 screens active',
+      'Desktop environment: GNOME 42.4 running',
+      'Window manager: Mutter, compositing enabled',
+      'Audio subsystem: PulseAudio v16.1 running',
+      'Sound cards: 2 detected, HDA Intel configured',
+    ];
+
+    let linesLeft = [];
+    let linesRight = [];
+    let lineCounterLeft = 0;
+    let lineCounterRight = 47; // Offset for variety
+
+    function fillScreen() {
+      // Calculate how many lines fit on screen
+      const lineHeight = 14.4; // 12px * 1.2 line-height
+      const maxLines = Math.ceil(window.innerHeight / lineHeight) + 5;
+      
+      // Add lines rapidly to left column
+      for (let i = 0; i < 3; i++) {
+        if (linesLeft.length >= maxLines) {
+          linesLeft.shift();
+        }
+        const command = commands[lineCounterLeft % commands.length];
+        linesLeft.push(command);
+        lineCounterLeft++;
+      }
+      
+      // Add lines rapidly to right column
+      for (let i = 0; i < 3; i++) {
+        if (linesRight.length >= maxLines) {
+          linesRight.shift();
+        }
+        const command = commands[lineCounterRight % commands.length];
+        linesRight.push(command);
+        lineCounterRight++;
+      }
+      
+      terminalLeft.innerHTML = linesLeft.map(line => 
+        `<div class="terminal-line">${line}</div>`
+      ).join('');
+      
+      terminalRight.innerHTML = linesRight.map(line => 
+        `<div class="terminal-line">${line}</div>`
+      ).join('');
+    }
+
+    // Very fast updating - fills screen quickly
+    setInterval(fillScreen, 50);
+
+    // Video interaction handling
     async function handleInteraction() {
       if (interactionHandled) return;
       interactionHandled = true;
-
-
       try {
         video.muted = false;
-
         await video.play();
       } catch (err) {
-
         console.warn('Play failed after interaction — keeping muted:', err);
         video.muted = true;
       } finally {
- 
         removeListeners();
       }
     }
@@ -55,12 +235,10 @@
       document.removeEventListener('keydown', handleInteraction);
     }
 
-
     document.addEventListener('click', handleInteraction, { once: true });
     document.addEventListener('pointerdown', handleInteraction, { once: true });
     document.addEventListener('touchstart', handleInteraction, { once: true });
     document.addEventListener('keydown', handleInteraction, { once: true });
-
 
     video.addEventListener('ended', () => {
       window.location.href = 'https://www.torproject.org/download/';
