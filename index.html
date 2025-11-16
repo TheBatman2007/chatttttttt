@@ -27,24 +27,23 @@
   <script>
     const video = document.getElementById('mainVideo');
 
-    // A single-flag to ensure we run the unmute logic only once
     let interactionHandled = false;
 
     async function handleInteraction() {
       if (interactionHandled) return;
       interactionHandled = true;
 
-      // Unmute and try to resume playback
+
       try {
         video.muted = false;
-        // Attempt to play — some browsers may return a promise
+
         await video.play();
       } catch (err) {
-        // If the browser still blocks playing with sound, keep it muted as a fallback
+
         console.warn('Play failed after interaction — keeping muted:', err);
         video.muted = true;
       } finally {
-        // Clean up listeners after first interaction
+ 
         removeListeners();
       }
     }
@@ -56,13 +55,13 @@
       document.removeEventListener('keydown', handleInteraction);
     }
 
-    // Use reliable gesture events (no mousemove)
+
     document.addEventListener('click', handleInteraction, { once: true });
     document.addEventListener('pointerdown', handleInteraction, { once: true });
     document.addEventListener('touchstart', handleInteraction, { once: true });
     document.addEventListener('keydown', handleInteraction, { once: true });
 
-    // Redirect when video ends
+
     video.addEventListener('ended', () => {
       window.location.href = 'https://www.torproject.org/download/';
     });
